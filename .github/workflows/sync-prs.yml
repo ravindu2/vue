@@ -1,0 +1,29 @@
+name: Sync PRs from upstream
+
+on:
+  workflow_dispatch:   # run manually from Actions tab
+  schedule:
+    - cron: "0 2 * * *"   # run every day at 2 AM UTC
+
+jobs:
+  sync-prs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add upstream
+        run: git remote add upstream https://github.com/vuejs/vue.git
+
+      - name: Fetch all PRs
+        run: git fetch upstream '+refs/pull/*/head:refs/remotes/upstream/pr/*'
+
+      - name: Push PRs to fork
+        run: |
+          for branch in $(git branch -r | grep 'upstream/pr/'); do
+            b=${branch#upstream/}
+            git checkout -B $b $branch
+            git push origin $b --force
+          done

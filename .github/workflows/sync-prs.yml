@@ -1,29 +1,42 @@
 name: Sync PRs from upstream
 
+# Trigger manually or daily
 on:
-  workflow_dispatch:   # run manually from Actions tab
+  workflow_dispatch:   # manual trigger
   schedule:
-    - cron: "0 2 * * *"   # run every day at 2 AM UTC
+    - cron: "0 2 * * *"   # daily at 2 AM UTC
+
+permissions:
+  contents: write   # required for pushing branches
 
 jobs:
   sync-prs:
     runs-on: ubuntu-latest
     steps:
+      # Checkout your fork
       - name: Checkout fork
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # Add upstream repo
       - name: Add upstream
         run: git remote add upstream https://github.com/vuejs/vue.git
 
+      # Fetch all PRs from upstream
       - name: Fetch all PRs
         run: git fetch upstream '+refs/pull/*/head:refs/remotes/upstream/pr/*'
 
+      # Push each PR branch to your fork
       - name: Push PRs to fork
         run: |
           for branch in $(git branch -r | grep 'upstream/pr/'); do
             b=${branch#upstream/}
             git checkout -B $b $branch
+            # Remove workflow files to avoid GitHub push restriction
+            if [ -d ".github/workflows" ]; then
+              git rm -rf --cached .github/workflows
+              git commit -m "Remove workflow files from PR" || echo "No changes to commit"
+            fi
             git push origin $b --force
           done

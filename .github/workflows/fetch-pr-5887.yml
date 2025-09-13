@@ -1,0 +1,43 @@
+name: Fetch PR #5887
+
+on:
+  workflow_dispatch:  # Manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-pr:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout your fork
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Add upstream repo
+      - name: Add upstream
+        run: git remote add upstream https://github.com/vuejs/vue.git
+
+      # Fetch PR #5887
+      - name: Fetch PR #5887
+        run: git fetch upstream pull/5887/head:pr-5887
+
+      # Checkout PR branch
+      - name: Checkout PR branch
+        run: git checkout pr-5887
+
+      # Remove workflow files to avoid push errors
+      - name: Remove workflow files
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          if [ -d ".github/workflows" ]; then
+            git rm -rf --cached .github/workflows || true
+            git commit -m "Remove workflow files from PR" || echo "No changes to commit"
+          fi
+
+      # Push branch to your fork
+      - name: Push PR branch to fork
+        run: git push origin pr-5887 --force

@@ -1,25 +1,41 @@
-name: SonarCloud Analysis PR-5887
+name: SonarCloud Analysis PR #5887
 
 on:
   workflow_dispatch:  # manual trigger
+
+permissions:
+  contents: read
 
 jobs:
   sonar:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: pr-5887   # Analyze the PR branch
 
+      # Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: Install dependencies
-        run: npm install
+      # Install pnpm
+      - name: Install pnpm
+        run: npm install -g pnpm
 
+      # Install dependencies
+      - name: Install dependencies
+        run: pnpm install
+
+      # Run SonarCloud analysis
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         with:
           projectBaseDir: .
           extraProperties: |
+            sonar.projectKey=vue-pr-5887
+            sonar.organization=your-sonarcloud-org
             sonar.inclusions=src/compiler/codegen/index.js,src/compiler/codegen/codegenBase.js,src/compiler/parser/index.js
